@@ -69,27 +69,38 @@
       if (!query) return;
       resultsDiv.innerHTML = '<p>搜索中...</p>';
       // 调用 Cloudflare Pages 上的 API 函数（/api/search）
-      fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-          const results = data.results;
-          if (results.length === 0) {
-            resultsDiv.innerHTML = '<p>没有找到相关结果。</p>';
-          } else {
-            resultsDiv.innerHTML = results.map(item => {
-              return `
-                <div class="result">
-                  <h3><a href="${item.url}" target="_blank">${item.title}</a></h3>
-                  <p>${item.snippet}</p>
-                </div>
-              `;
-            }).join('');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          resultsDiv.innerHTML = `<p style="color: red;">搜索出错：${error}</p>`;
-        });
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP 错误！状态码: ${response.status}`);
+    }
+    return response.text();  // 先转换为文本，检查是否是 HTML
+  })
+  .then(text => {
+    try {
+      return JSON.parse(text); // 解析 JSON
+    } catch (error) {
+      throw new Error('服务器返回的不是 JSON：' + text);
+    }
+  })
+  .then(data => {
+    const results = data.results;
+    if (results.length === 0) {
+      resultsDiv.innerHTML = '<p>没有找到相关结果。</p>';
+    } else {
+      resultsDiv.innerHTML = results.map(item => `
+        <div class="result">
+          <h3><a href="${item.url}" target="_blank">${item.title}</a></h3>
+          <p>${item.snippet}</p>
+        </div>
+      `).join('');
+    }
+  })
+  .catch(error => {
+    console.error('错误:', error);
+    resultsDiv.innerHTML = `<p style="color: red;">搜索出错：${error.message}</p>`;
+  });
+
     });
   </script>
 </body>
