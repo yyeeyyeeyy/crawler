@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>简单搜索引擎</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background: #007bff;
+      color: #fff;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .result h3 {
+      margin: 0;
+      color: #007bff;
+    }
+    .result p {
+      margin: 5px 0 0;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>简单搜索引擎</h1>
+    <form id="searchForm">
+      <input type="text" id="searchQuery" placeholder="输入搜索关键词..." required>
+      <button type="submit">搜索</button>
+    </form>
+    <div id="results"></div>
+  </div>
+  <script>
+    const searchForm = document.getElementById('searchForm');
+    const searchQuery = document.getElementById('searchQuery');
+    const resultsDiv = document.getElementById('results');
+    
+    searchForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const query = searchQuery.value.trim();
+      if (!query) return;
+      resultsDiv.innerHTML = '<p>搜索中...</p>';
+      // 调用 Cloudflare Pages 上的 API 函数（/api/search）
+      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          const results = data.results;
+          if (results.length === 0) {
+            resultsDiv.innerHTML = '<p>没有找到相关结果。</p>';
+          } else {
+            resultsDiv.innerHTML = results.map(item => {
+              return `
+                <div class="result">
+                  <h3><a href="${item.url}" target="_blank">${item.title}</a></h3>
+                  <p>${item.snippet}</p>
+                </div>
+              `;
+            }).join('');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          resultsDiv.innerHTML = `<p style="color: red;">搜索出错：${error}</p>`;
+        });
+    });
+  </script>
+</body>
+</html>
